@@ -1,11 +1,10 @@
 """
 Mock backend tools.
 
-In production these would call DTDL's real billing, network-ops, streaming,
-and CRM systems. Here they are deterministic, seeded, in-memory stand-ins so
-the agent's *logic* can be built and evaluated before real API access exists
--- a normal sequencing decision when the backend team and the agent team
-are working in parallel.
+In production these would call the operator's real billing, network-ops,
+streaming, and CRM systems. Here they're deterministic, seeded, in-memory
+stand-ins, so the agent logic can be built and tested before real API
+access exists.
 
 Every function returns a plain dict so tool output can be dropped straight
 into state and, later, into an LLM prompt without extra marshalling.
@@ -150,7 +149,7 @@ def raise_ticket(user_id: str, category: str, details: str) -> Dict[str, Any]:
     # zlib.crc32 (unlike Python's built-in hash()) is stable across process
     # runs, which matters for reproducible demos and eval snapshots.
     seed = f"{user_id}|{category}|{details}".encode("utf-8")
-    ticket_id = f"DTDL-{zlib.crc32(seed) % 100000:05d}"
+    ticket_id = f"CG-{zlib.crc32(seed) % 100000:05d}"
     return {
         "ticket_id": ticket_id,
         "user_id": user_id,

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from src import tools
 from src.state import new_state
 
-app = FastAPI(title="CareGraph", version="0.1.0", description="DTDL Talent Hack POC")
+app = FastAPI(title="CareGraph", version="0.1.0", description="Support agent built for The Talent Hack")
 
 app.add_middleware(
     CORSMiddleware,

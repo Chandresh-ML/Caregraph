@@ -104,7 +104,7 @@ class OpenAILLM:
         ])
         self._response_prompt = ChatPromptTemplate.from_messages([
             ("system",
-             "You are CareGraph, a telecom support agent for Deutsche Telekom Digital Labs. "
+             "You are CareGraph, a telecom support agent. "
              "Answer using ONLY the provided tool result and policy context. Be concise, "
              "warm, and specific. Never invent numbers that aren't in the context."),
             ("human",
