@@ -34,7 +34,22 @@ Two scenarios drove the design, because they need genuinely different handling:
 
 That right-hand panel is the actual point of the UI — most chat demos only show the reply. Showing *why* the agent is confident enough to act (or not) is what makes it obviously agentic rather than just a scripted chatbot. Five scenario buttons reproduce `demo.py`'s five test cases in one click each.
 
-![CareGraph UI — a duplicate-charge query being classified, routed, and escalated with a ticket](docs/screenshot.png)
+Screenshots below are all from a live run against the real compiled `StateGraph` (not mocked-up designs) — one per scenario, showing the full route → intent → tool call → retrieved context → outcome trace on the right.
+
+**Duplicate charge → escalated to a human**
+![Billing dispute, classified and escalated with ticket CG-07748](docs/screenshot-billing-escalate.png)
+
+**Match won't load → resolved automatically**
+![Streaming issue, resolved automatically with a credit applied](docs/screenshot-streaming.png)
+
+**Plan upgrade → resolved automatically**
+![Plan upgrade query, resolved with plan options shown](docs/screenshot-plan.png)
+
+**Cancellation risk → resolved automatically**
+![Retention query, resolved with a retention offer](docs/screenshot-retention.png)
+
+**Vague, low-confidence query → escalated immediately**
+![Vague query, escalated immediately due to low confidence](docs/screenshot-unknown-escalate.png)
 
 ## Architecture
 
@@ -145,31 +160,87 @@ Without `langgraph` installed, or with no `OPENAI_API_KEY` set, everything still
 
 ## Example run
 
-Actual output, captured from this repo, MockLLM backend (no API key needed to reproduce):
+Full output of `python demo.py`, captured from this repo (real compiled `StateGraph`, MockLLM backend — no API key needed to reproduce):
 
 ```
+[demo] langgraph found -- running the real compiled StateGraph.
+
+==============================================================================
 SCENARIO: Duplicate PPV charge (World Cup Final) -> should escalate
 USER (U1001): I was charged twice for the World Cup final pay-per-view and I want my money back.
+------------------------------------------------------------------------------
 intent          : billing  (confidence=0.95)
 escalated       : True
 ticket_id       : CG-07748
-CareGraph reply : Hi Anaya, I want to make sure this is handled properly, so I'm connecting
-you with a specialist. I've opened ticket CG-07748 (Disputed duplicate charge of ₹499 for
-World Cup Final PPV -- requires manual verification.) and included everything you've told me
-so you won't need to repeat yourself.
+CareGraph reply : Hi Anaya, I want to make sure this is handled properly, so I'm connecting you with a specialist. I've opened ticket CG-07748 (Disputed duplicate charge of ₹499 for World Cup Final PPV -- requires manual verification.) and included everything you've told me so you won't need to repeat yourself.
 
+==============================================================================
 SCENARIO: Match won't load during peak hours -> should self-resolve
 USER (U1003): The India vs Brazil match keeps buffering and won't load, what's going on?
+------------------------------------------------------------------------------
 intent          : streaming  (confidence=0.94)
 escalated       : False
-CareGraph reply : Hi Meera, thanks for flagging that. Your stream is affected by stream
-degraded during live event -- this is on our side, not your connection. It should clear up
-in about 15 minutes. In the meantime, try switching quality to Auto or reconnecting to the
-nearest server. We've applied a service credit to your account for the disruption, no action
-needed from you.
+CareGraph reply : Hi Meera, thanks for flagging that. Your stream is affected by stream degraded during live event -- this is on our side, not your connection. It should clear up in about 15 minutes. In the meantime, try switching quality to Auto or reconnecting to the nearest server. We've applied a service credit to your account for the disruption, no action needed from you.
+
+==============================================================================
+SCENARIO: 4K plan upgrade -> should self-resolve
+USER (U1004): I want to upgrade my plan so I can watch matches in 4K.
+------------------------------------------------------------------------------
+intent          : plan  (confidence=0.94)
+escalated       : False
+CareGraph reply : Hi Vikram, your current plan is Standard. To stream in 4K you'll want Premium at ₹1299/mo -- it activates immediately and this cycle is pro-rated. Want me to switch you over now?
+
+==============================================================================
+SCENARIO: Retention / cancellation intent -> should self-resolve
+USER (U1005): I'm thinking of cancelling and switching to another provider.
+------------------------------------------------------------------------------
+intent          : retention  (confidence=0.95)
+escalated       : False
+CareGraph reply : Hi Priya, sorry to hear you're considering leaving. Before you go: we can offer 20% off for 3 months, or 1 month free upgrade to Premium. Either can be applied right now if you'd like to stay.
+
+==============================================================================
+SCENARIO: Vague / low-confidence query -> should escalate immediately
+USER (U1002): I don't know what's wrong honestly, nothing is working, can someone just call me back.
+------------------------------------------------------------------------------
+intent          : unknown  (confidence=0.15)
+escalated       : True
+ticket_id       : CG-31856
+CareGraph reply : Hi Rohan, I want to make sure this is handled properly, so I'm connecting you with a specialist. I've opened ticket CG-31856 (Confidence below auto-resolution threshold.) and included everything you've told me so you won't need to repeat yourself.
+
+==============================================================================
+Ran 5 scenarios.
 ```
 
-Full output (all 5 scenarios: billing-escalate, streaming-resolve, plan-resolve, retention-resolve, unknown-escalate) is reproduced by running `python demo.py`.
+And the eval harness (`python eval/run_eval.py`):
+
+```
+Intent classification -- backend: mock
+--------------------------------------------------------------------------------------------
+[PASS] expected=billing    predicted=billing    conf=0.95  | I was charged twice for the World Cup final pay-per-...
+[PASS] expected=billing    predicted=billing    conf=0.76  | My last bill seems higher than usual, can you explai...
+[PASS] expected=streaming  predicted=streaming  conf=0.94  | The India vs Brazil match keeps buffering and won't ...
+[PASS] expected=streaming  predicted=streaming  conf=0.94  | Stream keeps freezing every few minutes during the m...
+[PASS] expected=plan       predicted=plan       conf=0.94  | I want to upgrade my plan so I can watch matches in 4K.
+[PASS] expected=plan       predicted=plan       conf=0.58  | What data plans do you offer with rollover?
+[PASS] expected=retention  predicted=retention  conf=0.95  | I'm thinking of cancelling and switching to another ...
+[PASS] expected=retention  predicted=retention  conf=0.58  | How do I close my account?
+[PASS] expected=network    predicted=network    conf=0.76  | My wifi router keeps disconnecting every hour.
+[PASS] expected=network    predicted=network    conf=0.58  | There's no signal at my house since this morning.
+[PASS] expected=unknown    predicted=unknown    conf=0.15  | I don't know what's wrong honestly, nothing is worki...
+[PASS] expected=unknown    predicted=unknown    conf=0.15  | hello
+--------------------------------------------------------------------------------------------
+Accuracy: 12/12 = 100%
+
+Retrieval smoke test (top-1 topic match)
+--------------------------------------------------------------------------------------------
+[PASS] query='duplicate charge refund'              expected=billing    got=billing
+[PASS] query='match buffering during live event'    expected=streaming  got=streaming
+[PASS] query='upgrade to 4k'                        expected=plan       got=plan
+[PASS] query='cancel my subscription'               expected=retention  got=retention
+[PASS] query='router keeps disconnecting'           expected=network    got=network
+--------------------------------------------------------------------------------------------
+Retrieval top-1 accuracy: 5/5 = 100%
+```
 
 ## Push to GitHub
 
