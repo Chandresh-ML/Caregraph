@@ -1,0 +1,74 @@
+[
+  {
+    "id": "FAQ-001",
+    "topic": "billing",
+    "title": "Duplicate charge / double billing",
+    "text": "If a customer is billed twice for the same order (including pay-per-view purchases), the amount is eligible for a full refund. Refunds for disputed duplicate charges require manual verification by the billing team before they are issued, to rule out fraud. Verified refunds are credited back to the original payment method within 5-7 business days."
+  },
+  {
+    "id": "FAQ-002",
+    "topic": "billing",
+    "title": "Pay-per-view (PPV) billing",
+    "text": "Pay-per-view events, including marquee football matches, are billed as a one-time charge separate from the customer's regular plan. PPV charges appear on the account within 10 minutes of purchase and are non-refundable once the stream has been accessed, except in cases of duplicate charges or verified technical failure."
+  },
+  {
+    "id": "FAQ-003",
+    "topic": "streaming",
+    "title": "Stream buffering or failing to load",
+    "text": "Buffering or failure to load during high-demand live events is most often caused by regional CDN (content delivery network) congestion rather than the customer's own connection. Recommended self-serve steps: refresh the app, switch streaming quality to Auto, or reconnect to the nearest regional server. Most congestion incidents resolve within 15-20 minutes during peak load."
+  },
+  {
+    "id": "FAQ-004",
+    "topic": "streaming",
+    "title": "Service credit for streaming disruption",
+    "text": "Customers who experience verified streaming disruption during a paid live event (PPV or included OTT content) are eligible for a service credit equal to a prorated share of the event cost, applied automatically to the next bill. No manual approval is required for credits under the standard threshold."
+  },
+  {
+    "id": "FAQ-005",
+    "topic": "network",
+    "title": "Regional network congestion during major events",
+    "text": "During major live events such as international tournaments, network load in dense urban areas can spike to several times normal levels. Engineering teams pre-provision additional capacity for known events, but unexpected surges can still cause temporary degradation. Status is tracked in real time per region."
+  },
+  {
+    "id": "FAQ-006",
+    "topic": "network",
+    "title": "Router and WiFi troubleshooting basics",
+    "text": "For persistent WiFi issues, customers should be guided to restart the router, confirm the firmware is up to date, and check for interference from other 2.4GHz devices. If the issue persists after basic troubleshooting, a truck-roll (technician visit) may be required."
+  },
+  {
+    "id": "FAQ-007",
+    "topic": "plan",
+    "title": "Upgrading for 4K / HD streaming access",
+    "text": "Standard plans support streaming up to 1080p. 4K streaming, including 4K broadcast of marquee sporting events, requires the Premium or Ultra plan tier and a compatible device. Plan upgrades take effect immediately and are billed on a pro-rated basis for the current cycle."
+  },
+  {
+    "id": "FAQ-008",
+    "topic": "plan",
+    "title": "Data rollover policy",
+    "text": "Unused mobile data from the current billing cycle rolls over to the following cycle for Premium and Ultra plan customers only, up to a maximum of one full cycle's allowance. Rollover data is always consumed before the current cycle's fresh allowance."
+  },
+  {
+    "id": "FAQ-009",
+    "topic": "retention",
+    "title": "Retention offers for cancellation requests",
+    "text": "When a customer expresses intent to cancel or switch providers, agents may offer a retention discount of up to 20% for 3 months, or a complimentary plan tier upgrade for 1 month, before processing a cancellation. Offers should be tailored to the customer's stated reason for leaving."
+  },
+  {
+    "id": "FAQ-010",
+    "topic": "escalation",
+    "title": "When to escalate to a human agent",
+    "text": "Cases should be escalated to a human specialist when: a billing dispute involves a duplicate or disputed charge requiring verification, a network issue is classified as a major outage rather than routine congestion, the customer explicitly requests a human agent, or the system's confidence in understanding the request falls below the auto-resolution threshold."
+  },
+  {
+    "id": "FAQ-011",
+    "topic": "billing",
+    "title": "Billing cycle and payment methods",
+    "text": "Bills are generated on a fixed date each month based on the customer's plan start date and are due within 15 days. Accepted payment methods include UPI, credit and debit cards, net banking, and the digital wallet. Auto-pay customers are charged automatically on the due date."
+  },
+  {
+    "id": "FAQ-012",
+    "topic": "network",
+    "title": "Major outage classification",
+    "text": "An issue is classified as a major outage, rather than routine congestion, when it affects a large customer base in a region for more than 30 minutes with no improvement trend. Major outages are automatically escalated and communicated to affected customers proactively."
+  }
+]

@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareGraph — DTDL Support Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0c10;
+    --surface: #15171d;
+    --surface-alt: #1c1f27;
+    --border: #262a35;
+    --magenta: #e20074;
+    --magenta-soft: rgba(226, 0, 116, 0.16);
+    --signal: #35e0c0;
+    --signal-soft: rgba(53, 224, 192, 0.14);
+    --amber: #f5a623;
+    --amber-soft: rgba(245, 166, 35, 0.14);
+    --text: #edeef2;
+    --text-muted: #888c96;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--magenta), var(--signal));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; color: #0b0c10;
+  }
+  .brand h1 { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .brand p { margin: 0; font-size: 12px; color: var(--text-muted); }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); transition: background 0.2s; }
+  .dot.live { background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+  .dot.down { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    padding: 12px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .toolbar .group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .toolbar label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-right: 2px; }
+  .pill {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; padding: 6px 12px;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer; transition: all 0.15s;
+  }
+  .pill:hover { border-color: var(--text-muted); }
+  .pill.active { background: var(--magenta-soft); border-color: var(--magenta); color: #ff5fae; }
+  .chip {
+    font-family: 'Inter', sans-serif; font-size: 12px; padding: 6px 11px;
+    border-radius: 8px; border: 1px dashed var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--signal); color: var(--signal); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1fr 360px; min-height: 0; }
+
+  .chat-col { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+  .messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 74%; padding: 11px 15px; border-radius: var(--radius); font-size: 14px; line-height: 1.5; }
+  .msg.user { align-self: flex-end; background: var(--magenta-soft); border: 1px solid rgba(226,0,116,0.35); border-bottom-right-radius: 3px; }
+  .msg.agent { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+  .msg.agent.escalated { border-color: rgba(245,166,35,0.45); }
+  .msg .who { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+  .msg.escalated .who::after { content: ' · escalated'; color: var(--amber); }
+
+  .typing { align-self: flex-start; display: flex; gap: 4px; padding: 14px 15px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.1s infinite ease-in-out; }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+  .empty { margin: auto; text-align: center; color: var(--text-muted); font-size: 13px; max-width: 320px; }
+  .empty .mark { margin: 0 auto 14px; }
+
+  .composer { display: flex; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .composer input {
+    flex: 1; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
+  }
+  .composer input:focus { border-color: var(--signal); }
+  .composer button {
+    background: var(--magenta); color: white; border: none; border-radius: 10px;
+    padding: 0 20px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; cursor: pointer;
+  }
+  .composer button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .trace { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  .trace h2 { font-family: 'Sora', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 10px; }
+  .route { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .step { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 4px 8px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
+  .step.done { color: var(--signal); border-color: rgba(53,224,192,0.4); background: var(--signal-soft); }
+  .step.escalate { color: var(--amber); border-color: rgba(245,166,35,0.4); background: var(--amber-soft); }
+  .arrow { color: var(--border); font-size: 11px; }
+
+  .meter-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .meter-row .label { font-family: 'JetBrains Mono', monospace; font-size: 13px; text-transform: capitalize; }
+  .meter-row .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  .meter { height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
+  .meter > div { height: 100%; background: var(--signal); transition: width 0.4s ease; }
+  .meter.low > div { background: var(--amber); }
+
+  .kv { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: #b9d8ff; white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+  .faqs { display: flex; flex-direction: column; gap: 6px; }
+  .faq { font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+  .faq .id { font-family: 'JetBrains Mono', monospace; color: var(--signal); font-size: 10.5px; margin-right: 6px; }
+
+  .outcome { padding: 10px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 500; }
+  .outcome.resolved { background: var(--signal-soft); color: var(--signal); border: 1px solid rgba(53,224,192,0.35); }
+  .outcome.escalated { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(245,166,35,0.35); }
+  .outcome .ticket { display: block; font-family: 'JetBrains Mono', monospace; margin-top: 4px; font-size: 11.5px; opacity: 0.85; }
+
+  .trace-placeholder { color: var(--text-muted); font-size: 12.5px; line-height: 1.6; }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .chat-col { border-right: none; }
+    .trace { border-top: 1px solid var(--border); max-height: 40vh; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="mark">C</div>
+      <div>
+        <h1>CareGraph</h1>
+        <p>DTDL support agent · Talent Hack POC</p>
+      </div>
+    </div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="group">
+      <label>Customer</label>
+      <div id="userPills"></div>
+    </div>
+    <div class="group">
+      <label>Try</label>
+      <button class="chip" data-scenario="0">double PPV charge</button>
+      <button class="chip" data-scenario="1">match won't load</button>
+      <button class="chip" data-scenario="2">4K upgrade</button>
+      <button class="chip" data-scenario="3">cancel / retention</button>
+      <button class="chip" data-scenario="4">vague query</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="chat-col">
+      <div class="messages" id="messages">
+        <div class="empty" id="emptyState">
+          <div class="mark" style="margin:0 auto 14px;">C</div>
+          Pick a customer above, or try a scenario chip, to see CareGraph
+          classify the request, pull grounding context, call a tool, and
+          either resolve it or escalate with a reason attached.
+        </div>
+      </div>
+      <div class="composer">
+        <input id="input" type="text" placeholder="Type a customer message…" autocomplete="off" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <div class="trace" id="trace">
+      <div class="trace-placeholder" id="tracePlaceholder">
+        Agent reasoning for the last turn will appear here — routing path,
+        confidence, the tool it called, what it retrieved, and whether it
+        resolved the request or escalated it.
+      </div>
+    </div>
+  </div>
+
+<script>
+  const SCENARIOS = [
+    { user: "U1001", text: "I was charged twice for the World Cup final pay-per-view and I want my money back." },
+    { user: "U1003", text: "The India vs Brazil match keeps buffering and won't load, what's going on?" },
+    { user: "U1004", text: "I want to upgrade my plan so I can watch matches in 4K." },
+    { user: "U1005", text: "I'm thinking of cancelling and switching to another provider." },
+    { user: "U1002", text: "I don't know what's wrong honestly, nothing is working, can someone just call me back." },
+  ];
+
+  let users = [];
+  let currentUser = null;
+
+  const $ = (sel) => document.querySelector(sel);
+  const messagesEl = $("#messages");
+  const inputEl = $("#input");
+  const sendBtn = $("#sendBtn");
+
+  async function init() {
+    try {
+      const health = await fetch("/api/health").then(r => r.json());
+      $("#statusDot").classList.add("live");
+      $("#statusText").textContent = `live · ${health.runner}`;
+    } catch (e) {
+      $("#statusDot").classList.add("down");
+      $("#statusText").textContent = "backend unreachable";
+    }
+    try {
+      users = await fetch("/api/users").then(r => r.json());
+    } catch (e) {
+      users = [];
+    }
+    renderUserPills();
+  }
+
+  function renderUserPills() {
+    const wrap = $("#userPills");
+    wrap.innerHTML = "";
+    users.forEach((u, i) => {
+      const btn = document.createElement("button");
+      btn.className = "pill" + (i === 0 ? " active" : "");
+      btn.textContent = u.name;
+      btn.dataset.userId = u.user_id;
+      btn.onclick = () => selectUser(u.user_id);
+      wrap.appendChild(btn);
+    });
+    if (users.length) currentUser = users[0].user_id;
+  }
+
+  function selectUser(userId) {
+    currentUser = userId;
+    document.querySelectorAll(".pill").forEach(p => p.classList.toggle("active", p.dataset.userId === userId));
+  }
+
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.onclick = () => {
+      const s = SCENARIOS[Number(chip.dataset.scenario)];
+      selectUser(s.user);
+      sendMessage(s.text);
+    };
+  });
+
+  sendBtn.onclick = () => {
+    const text = inputEl.value.trim();
+    if (text) sendMessage(text);
+  };
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendBtn.click();
+  });
+
+  function addMessage(role, text, escalated = false) {
+    $("#emptyState")?.remove();
+    const div = document.createElement("div");
+    div.className = `msg ${role}` + (escalated ? " escalated" : "");
+    div.innerHTML = `<span class="who">${role === "user" ? "customer" : "caregraph"}</span>${escapeHtml(text)}`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function addTyping() {
+    const div = document.createElement("div");
+    div.className = "typing";
+    div.id = "typingIndicator";
+    div.innerHTML = "<span></span><span></span><span></span>";
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function removeTyping() {
+    document.getElementById("typingIndicator")?.remove();
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function sendMessage(text) {
+    if (!currentUser) return;
+    addMessage("user", text);
+    inputEl.value = "";
+    sendBtn.disabled = true;
+    addTyping();
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: currentUser, message: text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      removeTyping();
+      addMessage("agent", data.response, data.escalated);
+      renderTrace(data);
+    } catch (e) {
+      removeTyping();
+      addMessage("agent", "Couldn't reach the CareGraph backend. Is `uvicorn api:app --reload` running?", true);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  function renderTrace(data) {
+    $("#tracePlaceholder")?.remove();
+    const trace = $("#trace");
+    trace.innerHTML = "";
+
+    // Routing breadcrumb
+    const steps = ["classify", "retrieve", data.intent || "unknown", data.escalated ? "escalate" : "resolved"];
+    const routeHtml = steps.map((s, i) => {
+      const cls = i === steps.length - 1 ? (data.escalated ? "step escalate" : "step done") : "step done";
+      return `<span class="${cls}">${s}</span>` + (i < steps.length - 1 ? '<span class="arrow">→</span>' : "");
+    }).join("");
+    trace.insertAdjacentHTML("beforeend", `<div><h2>Route</h2><div class="route">${routeHtml}</div></div>`);
+
+    // Intent + confidence meter
+    const pct = Math.round((data.confidence || 0) * 100);
+    trace.insertAdjacentHTML("beforeend", `
+      <div>
+        <h2>Intent</h2>
+        <div class="meter-row"><span class="label">${data.intent || "unknown"}</span><span class="val">${pct}%</span></div>
+        <div class="meter ${pct < 55 ? "low" : ""}"><div style="width:${pct}%"></div></div>
+      </div>`);
+
+    // Tool call
+    if (data.tool_name) {
+      trace.insertAdjacentHTML("beforeend", `
+        <div>
+          <h2>Tool call</h2>
+          <div class="kv">${data.tool_name}(${data.user_id})\n→ ${escapeHtml(JSON.stringify(data.tool_result, null, 2))}</div>
+        </div>`);
+    }
+
+    // Retrieved context
+    if (data.retrieved_context && data.retrieved_context.length) {
+      const faqHtml = data.retrieved_context.map(f => `<div class="faq"><span class="id">${f.id}</span>${f.title} <span style="color:var(--text-muted)">(${f.score})</span></div>`).join("");
+      trace.insertAdjacentHTML("beforeend", `<div><h2>Retrieved context</h2><div class="faqs">${faqHtml}</div></div>`);
+    }
+
+    // Outcome
+    const outcomeHtml = data.escalated
+      ? `<div class="outcome escalated">Escalated to a human specialist<span class="ticket">ticket ${data.ticket_id}</span></div>`
+      : `<div class="outcome resolved">Resolved automatically, no human needed</div>`;
+    trace.insertAdjacentHTML("beforeend", `<div><h2>Outcome</h2>${outcomeHtml}</div>`);
+  }
+
+  init();
+</script>
+</body>
+</html>

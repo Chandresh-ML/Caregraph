@@ -1,0 +1,14 @@
+[
+  {"query": "I was charged twice for the World Cup final pay-per-view and I want my money back.", "expected_intent": "billing"},
+  {"query": "My last bill seems higher than usual, can you explain the charges?", "expected_intent": "billing"},
+  {"query": "The India vs Brazil match keeps buffering and won't load, what's going on?", "expected_intent": "streaming"},
+  {"query": "Stream keeps freezing every few minutes during the match.", "expected_intent": "streaming"},
+  {"query": "I want to upgrade my plan so I can watch matches in 4K.", "expected_intent": "plan"},
+  {"query": "What data plans do you offer with rollover?", "expected_intent": "plan"},
+  {"query": "I'm thinking of cancelling and switching to another provider.", "expected_intent": "retention"},
+  {"query": "How do I close my account?", "expected_intent": "retention"},
+  {"query": "My wifi router keeps disconnecting every hour.", "expected_intent": "network"},
+  {"query": "There's no signal at my house since this morning.", "expected_intent": "network"},
+  {"query": "I don't know what's wrong honestly, nothing is working, can someone just call me back.", "expected_intent": "unknown"},
+  {"query": "hello", "expected_intent": "unknown"}
+]

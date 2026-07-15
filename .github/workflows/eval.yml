@@ -1,0 +1,22 @@
+name: eval
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  classifier-and-retrieval-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Only the eval-relevant deps -- keeps CI fast and avoids requiring
+      # an OPENAI_API_KEY secret just to check the mock backend still
+      # classifies and retrieves correctly.
+      - run: pip install scikit-learn numpy
+
+      - run: python eval/run_eval.py
